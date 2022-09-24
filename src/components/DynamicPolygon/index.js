@@ -75,6 +75,7 @@ export const DynamicPolygon = () => {
                   lineGeom,
                   new THREE.LineBasicMaterial({ color: 'cyan' }),
               );
+
               return (
                 <primitive key={`${i}: ${outerPointCoords}`} object={line} />
               );
