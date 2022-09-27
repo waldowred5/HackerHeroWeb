@@ -18,7 +18,7 @@ export const ControlsTrackball = () => {
     <trackballControls
       ref={controls}
       args={[camera, domElement]}
-      // noZoom={true}
+      noZoom={false}
       rotateSpeed={6}
       dynamicDampingFactor={0.1}
     />

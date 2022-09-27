@@ -6,7 +6,15 @@ import { HeroCanvas } from './components/HeroCanvas';
 const App = () => {
   return (
     <div className="App">
-      <Canvas>
+      <Canvas
+        gl={{ toneMapping: 0 }}
+      >
+        <camera
+          fov={75}
+          aspect={window.innerWidth / window.innerHeight}
+          near={0.6}
+          far={120}
+        />
         <HeroCanvas />
       </Canvas>
     </div>
