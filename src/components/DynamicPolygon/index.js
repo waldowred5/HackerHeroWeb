@@ -1,20 +1,10 @@
 // eslint-disable-next-line no-unused-vars
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 // import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 // import { useThree } from '@react-three/fiber';
 // import { v4 as uuid } from 'uuid';
-
-// TODO Move this into its own Util
-const pointer = new THREE.Vector2();
-
-const onPointerMove = (event) => {
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-};
-
-window.addEventListener('pointermove', onPointerMove);
 
 // Utils
 const radius = 2;
@@ -62,36 +52,25 @@ export const DynamicPolygon = () => {
   const lineRefs = useRef([]);
   const ringsGroup = useRef();
 
-  const changeRingColor = (raycaster) => {
-    const intersects = raycaster.intersectObjects(
-        ringsGroup.current.children,
-        false,
-    );
+  const ringClickHandler = (event) => {
+    ringsGroup.current.children.map((child) => {
+      return child.scale.set(1, 1, 1);
+    });
 
-    if (intersects.length > 0) {
-      intersects[0].object.children[0].material.color =
-        new THREE.Color('white');
-    }
+    event.eventObject.scale.set(1.4, 1.4, 1.4);
+  };
 
-    // TODO This may cause memory leaks, do this material resetting properly!
-    if (intersects.length === 0) {
-      ringsGroup.current.children.map((ringTrigger) => {
-        ringTrigger.children[0].material = new THREE.MeshStandardMaterial({
-          color: 0x484848,
-          side: THREE.DoubleSide,
-        });
-      });
-    }
+  const changeRingColor = (event, color) => {
+    event.eventObject.children[0].material.color =
+      new THREE.Color(color);
   };
 
   useFrame((state) => {
-    const { camera, raycaster } = state;
+    const { camera } = state;
 
     ringsGroup.current.children.forEach((ring) => {
       ring.lookAt(camera.position);
     });
-
-    changeRingColor(raycaster);
   });
 
   return (
@@ -118,14 +97,20 @@ export const DynamicPolygon = () => {
             const { x, y, z } = vector;
 
             const ringMaterial = new THREE.MeshStandardMaterial({
+              // color: 0xFFFFFF,
               color: 0x484848,
               side: THREE.DoubleSide,
             });
 
             return (
               <mesh
-                key={`Invisible Ring Trigger ${i}: ${vector.x}`}
+                key={`Invisible Ring Hitbox ${i}: ${vector.x}`}
                 position={[x, y, z]}
+                onClick={(event) => ringClickHandler(event)}
+                onPointerEnter={(event) => changeRingColor(event, 'white')}
+                onPointerLeave={(event) => changeRingColor(event, 0x484848)}
+                /* TODO Fix this typing with constants */
+                type="Invisible Ring Hitbox"
               >
                 <ringGeometry args={[0, 0.09, 32]} />
                 <meshStandardMaterial
@@ -135,6 +120,8 @@ export const DynamicPolygon = () => {
                 />
                 <mesh
                   key={`Visible Ring ${i}: ${vector.x}`}
+                  /* TODO Fix this typing with constants */
+                  type="Visible Ring"
                 >
                   <ringGeometry args={[0.06, 0.08, 32]} />
                   <primitive
