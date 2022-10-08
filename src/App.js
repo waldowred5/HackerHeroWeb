@@ -1,25 +1,24 @@
-import logo from './logo.svg';
 import './App.css';
+import React from 'react';
+import { Canvas } from '@react-three/fiber';
+import { HeroCanvas } from './components/HeroCanvas';
 
-function App() {
+const App = () => {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Canvas
+        gl={{ toneMapping: 0 }}
+      >
+        <camera
+          fov={75}
+          aspect={window.innerWidth / window.innerHeight}
+          near={0.6}
+          far={120}
+        />
+        <HeroCanvas />
+      </Canvas>
     </div>
   );
-}
+};
 
 export default App;
