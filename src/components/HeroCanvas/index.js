@@ -1,18 +1,18 @@
 import React from 'react';
 // import { PointLightHelper } from 'three';
 // import { useHelper } from '@react-three/drei';
-import { ControlsTrackball } from '../ControlsTrackball';
+import { ControlsTrackball } from 'components/ControlsTrackball';
 // eslint-disable-next-line no-unused-vars
 import PropTypes from 'prop-types';
-import { DynamicPolygon } from '../DynamicPolygon';
-import { Orb } from '../Orb';
-import { LightsArray } from '../LightsArray';
+import { DynamicPolygon } from 'components/DynamicPolygon';
+import { Orb } from 'components/Orb';
+import { SceneLights } from 'components/SceneLights';
 
 export const HeroCanvas = () => {
   return (
     <>
       <ControlsTrackball />
-      <LightsArray />
+      <SceneLights />
       <DynamicPolygon />
       <Orb />
     </>
