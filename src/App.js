@@ -1,8 +1,8 @@
 import './App.css';
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { HeroCanvas } from './components/HeroCanvas';
 import { RecoilRoot } from 'recoil';
+import { GameManager } from './components/GameManager';
 
 const App = () => {
   return (
@@ -16,8 +16,9 @@ const App = () => {
             aspect={window.innerWidth / window.innerHeight}
             near={0.6}
             far={120}
+            position={[0, 0, 5]}
           />
-          <HeroCanvas />
+          <GameManager />
         </Canvas>
       </div>
     </RecoilRoot>

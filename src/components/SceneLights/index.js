@@ -4,7 +4,7 @@ import { PointLightHelper } from 'three';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { lightsDebugState, sceneLightsState } from './store';
 import { guiDebugger } from 'utils/guiDebugger';
-import { LIGHTS_DEBUG_ITEM } from 'utils/constants';
+import { DEBUG_LIGHTS_ITEM } from 'utils/constants';
 
 export const SceneLights = () => {
   const lights = useRecoilValue(sceneLightsState);
@@ -34,25 +34,25 @@ export const SceneLights = () => {
   useEffect(() => {
     if (guiDebugger) {
       const existingFolder = guiDebugger.folders.find((folder) => {
-        return folder._title === LIGHTS_DEBUG_ITEM.LIGHTS;
+        return folder._title === DEBUG_LIGHTS_ITEM.LIGHTS;
       });
 
       const lightsFolder = existingFolder ||
-        guiDebugger.addFolder(LIGHTS_DEBUG_ITEM.LIGHTS).open();
+        guiDebugger.addFolder(DEBUG_LIGHTS_ITEM.LIGHTS).open();
 
       existingFolder?.controllers.find((controller) => {
-        return controller._name === LIGHTS_DEBUG_ITEM.HELPERS;
+        return controller._name === DEBUG_LIGHTS_ITEM.HELPERS;
       }) || lightsFolder.add(debugObject, 'enableLightHelpers')
-          .name(LIGHTS_DEBUG_ITEM.HELPERS)
+          .name(DEBUG_LIGHTS_ITEM.HELPERS)
           .onChange((bool) => setEnableLightHelpers(bool),
           );
 
     //   lights.map((light, index) => {
     //     const numberedLightFolder =
-      //     `${LIGHTS_DEBUG_ITEM.LIGHT}: ${index + 1}`;
+      //     `${DEBUG_LIGHTS_ITEM.LIGHT}: ${index + 1}`;
     //
     //     const existingFolder = guiDebugger.folders.find((folder) => {
-    //       return folder._title === LIGHTS_DEBUG_ITEM.LIGHTS;
+    //       return folder._title === DEBUG_LIGHTS_ITEM.LIGHTS;
     //     });
     //
     //     const existingSubFolder = existingFolder.children.find((folder) => {
@@ -60,16 +60,16 @@ export const SceneLights = () => {
     //     });
     //
     //     const lightsFolder = existingFolder ||
-    //     guiDebugger.addFolder(LIGHTS_DEBUG_ITEM.LIGHTS).open();
+    //     guiDebugger.addFolder(DEBUG_LIGHTS_ITEM.LIGHTS).open();
     //
     //     const lightSubFolder = existingSubFolder ||
     //     lightsFolder.addFolder(numberedLightFolder).open();
     //
     //     existingSubFolder?.controllers.find((controller) => {
-    //       return controller._name === LIGHTS_DEBUG_ITEM.COLOR;
+    //       return controller._name === DEBUG_LIGHTS_ITEM.COLOR;
     //     }) || lightSubFolder.addColor(
       //     debugColorObject.colors[index], 'color')
-    //         .name(LIGHTS_DEBUG_ITEM.COLOR)
+    //         .name(DEBUG_LIGHTS_ITEM.COLOR)
     //         .onChange((newColor) => {
     //           return setLights((state) => {
     //             return [

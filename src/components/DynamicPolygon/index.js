@@ -1,25 +1,42 @@
-// eslint-disable-next-line no-unused-vars
-import React, { useRef, useState } from 'react';
+/* eslint-disable no-unused-vars */
+import React, { useEffect, useRef, useState } from 'react';
 // import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import {
+  lineDrawThresholdPercentageState,
+  nodesState,
+  vertexNumberState,
+  vertexPlacementChaosFactorState, vertexPointsState,
+  verticesState,
+} from './store';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { guiDebugger } from '../../utils/guiDebugger';
+import { DEBUG_GRAPH_ITEM, GAME_SCREEN } from '../../utils/constants';
+import { gameScreenState } from '../GameManager/store';
 // import { useThree } from '@react-three/fiber';
 // import { v4 as uuid } from 'uuid';
 
 // Utils
 const radius = 2;
-const chaosModifier = 0.02;
-const nodeNumber = 40;
-const lineDrawThresholdPercentage = 0.7;
+// const vertexNumber = 40;
+// const vertexPlacementChaosFactor = 52;
+// const lineDrawThresholdPercentage = 0.7;
 // TODO set separate data file
-const nodes = Array.from(Array(nodeNumber));
+// const nodes = Array.from(Array(vertexNumber));
 
-const getFibonacciSpherePoints = (nodes = 1, radius = 1) => {
+const getFibonacciSpherePoints = ({
+  nodes = 1,
+  radius = 1,
+  vertexPlacementChaosFactor,
+  vertexNumber,
+}) => {
   const offset = 2 / nodes.length;
   const increment = Math.PI * (3 - Math.sqrt(5));
 
   return nodes.reduce((acc, sample, index) => {
-    const chaosLevel = 1 + Math.random() * chaosModifier;
+    const chaosLevel = 1 + Math.random() *
+      vertexPlacementChaosFactor / vertexNumber / 1000;
     const yMod = ((index * offset) - 1) + (offset / 2);
     const distance = Math.sqrt(1 - Math.pow(yMod, 2));
     const phi = ((index + 1) % nodes.length) * increment * chaosLevel;
@@ -37,20 +54,95 @@ const getFibonacciSpherePoints = (nodes = 1, radius = 1) => {
   { coords: [], vectors: [] });
 };
 
-const vertexPoints = getFibonacciSpherePoints(nodes, radius);
-
-const vertices = new Float32Array(
-    vertexPoints.coords.reduce((acc, point) => {
-      return [...acc, point];
-    }, []),
-);
 
 // Component
 // TODO Split out children into separate components
 export const DynamicPolygon = () => {
   const pointsRef = useRef();
-  const lineRefs = useRef([]);
+  // const lineRefs = useRef([]);
   const ringsGroup = useRef();
+
+
+  const nodes = useRecoilValue(nodesState);
+  const [vertexNumber, setVertexNumber] = useRecoilState(vertexNumberState);
+  const [vertexPoints, setVertexPoints] = useRecoilState(vertexPointsState);
+  const [vertices, setVertices] = useRecoilState(verticesState);
+  const [
+    lineDrawThresholdPercentage,
+    setLineDrawThresholdPercentage,
+  ] = useRecoilState(lineDrawThresholdPercentageState);
+  const [
+    vertexPlacementChaosFactor,
+    setVertexPlacementChaosFactor,
+  ] = useRecoilState(vertexPlacementChaosFactorState);
+
+  // TODO Don't leave this here... let a manager handle this
+  const [, setGameScreen] = useRecoilState(gameScreenState);
+
+  useEffect(() => {
+    setVertexPoints(getFibonacciSpherePoints(
+        {
+          nodes,
+          radius,
+          vertexPlacementChaosFactor,
+          vertexNumber,
+        },
+    ));
+
+    setVertices(new Float32Array(
+        vertexPoints.coords.reduce((acc, point) => {
+          return [...acc, point];
+        }, []),
+    ));
+  }, [lineDrawThresholdPercentage, vertexNumber, vertexPlacementChaosFactor]);
+
+  // Debug
+  const debugObject = {
+    lineDrawThresholdPercentage,
+    vertexNumber,
+    vertexPlacementChaosFactor,
+  };
+
+  // Debug
+  useEffect(() => {
+    if (guiDebugger) {
+      const existingFolder = guiDebugger.folders.find((folder) => {
+        return folder._title === DEBUG_GRAPH_ITEM.GRAPH;
+      });
+
+      const graphFolder = existingFolder ||
+        guiDebugger.addFolder(DEBUG_GRAPH_ITEM.GRAPH).open();
+
+      existingFolder?.controllers.find((controller) => {
+        return controller._name === DEBUG_GRAPH_ITEM.VERTEX_NUMBER;
+      }) || graphFolder.add(debugObject, 'vertexNumber')
+          .name(DEBUG_GRAPH_ITEM.VERTEX_NUMBER)
+          .min(1)
+          .max(150)
+          .step(1)
+          .onChange((number) => setVertexNumber(number));
+
+      existingFolder?.controllers.find((controller) => {
+        return controller._name ===
+          DEBUG_GRAPH_ITEM.VERTEX_PLACEMENT_CHAOS_MODIFIER;
+      }) || graphFolder.add(debugObject, 'vertexPlacementChaosFactor')
+          .name(DEBUG_GRAPH_ITEM.VERTEX_PLACEMENT_CHAOS_MODIFIER)
+          .min(0.1)
+          .max(1500)
+          .step(0.1)
+          .onChange((number) => setVertexPlacementChaosFactor(number));
+
+      existingFolder?.controllers.find((controller) => {
+        return controller._name ===
+          DEBUG_GRAPH_ITEM.LINE_DRAW_THRESHOLD_PERCENTAGE;
+      }) || graphFolder.add(debugObject, 'lineDrawThresholdPercentage')
+          .name(DEBUG_GRAPH_ITEM.LINE_DRAW_THRESHOLD_PERCENTAGE)
+          .min(0.01)
+          .max(1)
+          .step(0.01)
+          .onChange((number) => setLineDrawThresholdPercentage(number));
+    }
+  }, [lineDrawThresholdPercentage, vertexNumber, vertexPlacementChaosFactor]);
 
   const ringClickHandler = (event) => {
     ringsGroup.current.children.map((child) => {
@@ -58,6 +150,9 @@ export const DynamicPolygon = () => {
     });
 
     event.eventObject.scale.set(1.4, 1.4, 1.4);
+
+    // TODO Don't leave this here... let a manager handle this
+    setGameScreen(GAME_SCREEN.GAME_OVER);
   };
 
   const changeRingColor = (event, color) => {
@@ -134,7 +229,7 @@ export const DynamicPolygon = () => {
         }
       </group>
       {
-        vertexPoints.vectors.map((outerPointCoords, i) => {
+        vertexPoints.vectors.map((outerPointCoords, i, array) => {
           return vertexPoints.vectors.map((innerPointCoords, j) => {
             if (j <= i) {
               return;
@@ -144,22 +239,74 @@ export const DynamicPolygon = () => {
               outerPointCoords.distanceTo(innerPointCoords) <
               radius * lineDrawThresholdPercentage
             ) {
-              const lineGeom = new THREE.BufferGeometry().setFromPoints([
-                outerPointCoords,
-                innerPointCoords,
-              ]);
-              const line = new THREE.Line(
-                  lineGeom,
-                  new THREE.LineBasicMaterial({ color: 0x0cff00 }),
-              );
+              // const lineGeom = new THREE.BufferGeometry().setFromPoints([
+              //   outerPointCoords,
+              //   innerPointCoords,
+              // ]);
+              // const line = new THREE.Line(
+              //     lineGeom,
+              //     new THREE.LineBasicMaterial({ color: 0x0cff00 }),
+              // );
+              //
+              // return (
+              //   <primitive
+              //     key={`${i}: ${outerPointCoords.x}, ${innerPointCoords.x}`}
+              //     ref={(element) => lineRefs.current[j] = element}
+              //     object={line}
+              //   />
+              // );
 
-              return (
-                <primitive
-                  key={`${i}: ${outerPointCoords.x}, ${innerPointCoords.x}`}
-                  ref={(element) => lineRefs.current[j] = element}
-                  object={line}
-                />
-              );
+              const endPoints = [];
+              for (let i = 0; i < array.length - 1; i++) {
+                endPoints.push({ a: outerPointCoords, b: innerPointCoords });
+              }
+
+              for (const { a, b } of endPoints) {
+                // stick has length equal to distance between endpoints
+                const cylinderRadius = 0.02;
+                const cylinderTesselation = {
+                  radial: 16,
+                  length: 32,
+                };
+
+                const distance = a.distanceTo(b);
+                const cylinderGeom = new THREE.CylinderGeometry(
+                    cylinderRadius,
+                    cylinderRadius,
+                    distance,
+                    cylinderTesselation.radial,
+                    cylinderTesselation.length,
+                );
+
+                cylinderGeom.translate(0, distance / 2, 0);
+                cylinderGeom.rotateX(Math.PI / 2);
+
+                // const upVector = new THREE.Vector3(0, 0, 1);
+                // const direction = new THREE.Vector3();
+                // const vector = direction.subVectors(
+                //     outerPointCoords,
+                //     innerPointCoords,
+                // );
+
+                const cylinder = new THREE.Mesh(
+                    cylinderGeom,
+                    new THREE.MeshStandardMaterial({
+                      color: 0x0cff00,
+                    }),
+                );
+
+                cylinder.position.copy(innerPointCoords);
+                cylinder.lookAt(outerPointCoords);
+
+                const { x, y, z } = cylinder.position;
+
+                return (
+                  <primitive
+                    key={`Edge: ${x}, ${y}, ${z}`}
+                    object={cylinder}
+                  />
+                );
+              }
             }
           });
         })

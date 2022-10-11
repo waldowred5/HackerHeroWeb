@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { guiDebugger } from 'utils/guiDebugger';
 import { useRecoilState } from 'recoil';
 import { orbPropsState } from './store';
-import { ORB_DEBUG_ITEM } from 'utils/constants';
+import { DEBUG_ORB_ITEM } from 'utils/constants';
 
 export const Orb = () => {
   const orbRef = useRef();
@@ -17,16 +17,16 @@ export const Orb = () => {
   useEffect(() => {
     if (guiDebugger) {
       const existingFolder = guiDebugger.folders.find((folder) => {
-        return folder._title === ORB_DEBUG_ITEM.ORB;
+        return folder._title === DEBUG_ORB_ITEM.ORB;
       });
 
       const orbFolder = existingFolder ||
-        guiDebugger.addFolder(ORB_DEBUG_ITEM.ORB).open();
+        guiDebugger.addFolder(DEBUG_ORB_ITEM.ORB).open();
 
       existingFolder?.controllers.find((controller) => {
-        return controller._name === ORB_DEBUG_ITEM.SCALE;
+        return controller._name === DEBUG_ORB_ITEM.SCALE;
       }) || orbFolder.add(debugObject, 'scale')
-          .name(ORB_DEBUG_ITEM.SCALE)
+          .name(DEBUG_ORB_ITEM.SCALE)
           .min(0)
           .max(5)
           .step(0.1)
@@ -38,9 +38,9 @@ export const Orb = () => {
           }));
 
       existingFolder?.controllers.find((controller) => {
-        return controller._name === ORB_DEBUG_ITEM.OPACITY;
+        return controller._name === DEBUG_ORB_ITEM.OPACITY;
       }) || orbFolder.add(debugObject, 'opacity')
-          .name(ORB_DEBUG_ITEM.OPACITY)
+          .name(DEBUG_ORB_ITEM.OPACITY)
           .min(0)
           .max(1)
           .step(0.01)
