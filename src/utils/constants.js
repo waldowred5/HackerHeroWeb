@@ -10,6 +10,11 @@ export const DEBUG_GRAPH_ITEM = {
   VERTEX_PLACEMENT_CHAOS_MODIFIER: 'Vertex Placement Chaos Factor',
 };
 
+export const DEBUG_HACKER_BOT_ITEM = {
+  HACKER_BOT: 'Hacker Bot',
+  RADIUS: 'Radius',
+};
+
 export const DEBUG_LIGHTS_ITEM = {
   COLOR: 'Color',
   LIGHT: 'Light',

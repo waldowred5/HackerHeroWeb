@@ -1,5 +1,12 @@
 import { atom, selector } from 'recoil';
 
+export const serverOrbPropsState = atom({
+  key: 'vertexObject',
+  default: {
+    radius: 2,
+  },
+});
+
 export const vertexNumberState = atom({
   key: 'vertexNumber',
   default: 50,

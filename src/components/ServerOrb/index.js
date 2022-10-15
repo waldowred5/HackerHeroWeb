@@ -1,29 +1,20 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useRef, useState } from 'react';
-// import { useFrame } from '@react-three/fiber';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
 import {
   lineDrawThresholdPercentageState,
   nodesState,
   vertexNumberState,
-  vertexPlacementChaosFactorState, vertexPointsState,
+  vertexPlacementChaosFactorState,
+  vertexPointsState,
+  serverOrbPropsState,
   verticesState,
 } from './store';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { guiDebugger } from '../../utils/guiDebugger';
-import { DEBUG_GRAPH_ITEM, GAME_SCREEN } from '../../utils/constants';
-import { gameScreenState } from '../GameManager/store';
-// import { useThree } from '@react-three/fiber';
-// import { v4 as uuid } from 'uuid';
-
-// Utils
-const radius = 2;
-// const vertexNumber = 40;
-// const vertexPlacementChaosFactor = 52;
-// const lineDrawThresholdPercentage = 0.7;
-// TODO set separate data file
-// const nodes = Array.from(Array(vertexNumber));
+import { DEBUG_GRAPH_ITEM } from '../../utils/constants';
+import { hackerBotListState } from '../HackerBot/store';
+import { HackerBot } from '../HackerBot';
 
 const getFibonacciSpherePoints = ({
   nodes = 1,
@@ -54,19 +45,20 @@ const getFibonacciSpherePoints = ({
   { coords: [], vectors: [] });
 };
 
-
 // Component
 // TODO Split out children into separate components
-export const DynamicPolygon = () => {
+export const ServerOrb = () => {
   const pointsRef = useRef();
-  // const lineRefs = useRef([]);
-  const ringsGroup = useRef();
+  const nodesGroup = useRef();
+  const hackerBotsGroup = useRef();
 
+  const [{ radius }, setServerOrbProps] = useRecoilState(serverOrbPropsState);
 
   const nodes = useRecoilValue(nodesState);
   const [vertexNumber, setVertexNumber] = useRecoilState(vertexNumberState);
   const [vertexPoints, setVertexPoints] = useRecoilState(vertexPointsState);
   const [vertices, setVertices] = useRecoilState(verticesState);
+  const [hackerBotList, setHackerBotList] = useRecoilState(hackerBotListState);
   const [
     lineDrawThresholdPercentage,
     setLineDrawThresholdPercentage,
@@ -75,9 +67,6 @@ export const DynamicPolygon = () => {
     vertexPlacementChaosFactor,
     setVertexPlacementChaosFactor,
   ] = useRecoilState(vertexPlacementChaosFactorState);
-
-  // TODO Don't leave this here... let a manager handle this
-  const [, setGameScreen] = useRecoilState(gameScreenState);
 
   useEffect(() => {
     setVertexPoints(getFibonacciSpherePoints(
@@ -106,6 +95,8 @@ export const DynamicPolygon = () => {
   // Debug
   useEffect(() => {
     if (guiDebugger) {
+      setHackerBotList([]);
+
       const existingFolder = guiDebugger.folders.find((folder) => {
         return folder._title === DEBUG_GRAPH_ITEM.GRAPH;
       });
@@ -144,29 +135,24 @@ export const DynamicPolygon = () => {
     }
   }, [lineDrawThresholdPercentage, vertexNumber, vertexPlacementChaosFactor]);
 
-  const ringClickHandler = (event) => {
-    ringsGroup.current.children.map((child) => {
-      return child.scale.set(1, 1, 1);
+  const nodeClickHandler = (event, vector) => {
+    const { x, y, z } = vector;
+
+    setHackerBotList(() => {
+      return [
+        ...hackerBotList,
+        {
+          vector: { x, y, z },
+          nodeId: event.eventObject.uuid,
+        },
+      ];
     });
-
-    event.eventObject.scale.set(1.4, 1.4, 1.4);
-
-    // TODO Don't leave this here... let a manager handle this
-    setGameScreen(GAME_SCREEN.GAME_OVER);
   };
 
-  const changeRingColor = (event, color) => {
-    event.eventObject.children[0].material.color =
+  const changeNodeColor = (event, color) => {
+    event.eventObject.material.color =
       new THREE.Color(color);
   };
-
-  useFrame((state) => {
-    const { camera } = state;
-
-    ringsGroup.current.children.forEach((ring) => {
-      ring.lookAt(camera.position);
-    });
-  });
 
   return (
     <>
@@ -182,48 +168,48 @@ export const DynamicPolygon = () => {
           />
         </bufferGeometry>
         <pointsMaterial color={0xff0000} visible={false} />
-        {/* <pointsMaterial color={0xff0000} size={0.2} />*/}
       </points>
       <group
-        ref={ringsGroup}
+        ref={nodesGroup}
       >
         {
           vertexPoints.vectors.map((vector, i) => {
             const { x, y, z } = vector;
 
-            const ringMaterial = new THREE.MeshStandardMaterial({
-              // color: 0xFFFFFF,
+            const nodeMaterial = new THREE.MeshStandardMaterial({
               color: 0x484848,
               side: THREE.DoubleSide,
             });
 
             return (
               <mesh
-                key={`Invisible Ring Hitbox ${i}: ${vector.x}`}
+                key={`Node ${i}: ${vector.x}`}
                 position={[x, y, z]}
-                onClick={(event) => ringClickHandler(event)}
-                onPointerEnter={(event) => changeRingColor(event, 'white')}
-                onPointerLeave={(event) => changeRingColor(event, 0x484848)}
-                /* TODO Fix this typing with constants */
-                type="Invisible Ring Hitbox"
+                onClick={(event) => nodeClickHandler(event, vector)}
+                onPointerEnter={(event) => changeNodeColor(event, 'white')}
+                onPointerLeave={(event) => changeNodeColor(event, 0x484848)}
               >
-                <ringGeometry args={[0, 0.09, 32]} />
-                <meshStandardMaterial
-                  color={0xFFFFFF}
-                  transparent={true}
-                  opacity={0}
+                <sphereGeometry args={[0.09, 32, 32]} />
+                <primitive
+                  object={nodeMaterial}
                 />
-                <mesh
-                  key={`Visible Ring ${i}: ${vector.x}`}
-                  /* TODO Fix this typing with constants */
-                  type="Visible Ring"
-                >
-                  <ringGeometry args={[0.06, 0.08, 32]} />
-                  <primitive
-                    object={ringMaterial}
-                  />
-                </mesh>
               </mesh>
+            );
+          })
+        }
+      </group>
+      <group
+        ref={hackerBotsGroup}
+      >
+        {
+          hackerBotList.map((hackerBot, index) => {
+            const { vector } = hackerBot;
+
+            return (
+              <HackerBot
+                key={`HackerBot ${index}: ${hackerBot.x}`}
+                vector={vector}
+              />
             );
           })
         }
@@ -239,30 +225,12 @@ export const DynamicPolygon = () => {
               outerPointCoords.distanceTo(innerPointCoords) <
               radius * lineDrawThresholdPercentage
             ) {
-              // const lineGeom = new THREE.BufferGeometry().setFromPoints([
-              //   outerPointCoords,
-              //   innerPointCoords,
-              // ]);
-              // const line = new THREE.Line(
-              //     lineGeom,
-              //     new THREE.LineBasicMaterial({ color: 0x0cff00 }),
-              // );
-              //
-              // return (
-              //   <primitive
-              //     key={`${i}: ${outerPointCoords.x}, ${innerPointCoords.x}`}
-              //     ref={(element) => lineRefs.current[j] = element}
-              //     object={line}
-              //   />
-              // );
-
               const endPoints = [];
               for (let i = 0; i < array.length - 1; i++) {
                 endPoints.push({ a: outerPointCoords, b: innerPointCoords });
               }
 
               for (const { a, b } of endPoints) {
-                // stick has length equal to distance between endpoints
                 const cylinderRadius = 0.02;
                 const cylinderTesselation = {
                   radial: 16,
@@ -280,13 +248,6 @@ export const DynamicPolygon = () => {
 
                 cylinderGeom.translate(0, distance / 2, 0);
                 cylinderGeom.rotateX(Math.PI / 2);
-
-                // const upVector = new THREE.Vector3(0, 0, 1);
-                // const direction = new THREE.Vector3();
-                // const vector = direction.subVectors(
-                //     outerPointCoords,
-                //     innerPointCoords,
-                // );
 
                 const cylinder = new THREE.Mesh(
                     cylinderGeom,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { DynamicPolygon } from 'components/DynamicPolygon';
+import { ServerOrb } from 'components/ServerOrb';
 import { Orb } from 'components/Orb';
 import { useFrame } from '@react-three/fiber';
 
@@ -14,7 +14,7 @@ export const PlayGame = () => {
 
   return (
     <>
-      <DynamicPolygon />
+      <ServerOrb />
       <Orb />
     </>
   );
