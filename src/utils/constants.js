@@ -19,7 +19,8 @@ export const DEBUG_LIGHTS_ITEM = {
   COLOR: 'Color',
   LIGHT: 'Light',
   LIGHTS: 'Lights',
-  HELPERS: 'Show Helpers',
+  SHOW_LIGHT_HELPERS: 'Show Light Helpers',
+  SHOW_LIGHTS: 'Show Lights',
 };
 
 export const DEBUG_ORB_ITEM = {

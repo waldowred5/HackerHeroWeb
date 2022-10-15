@@ -3,50 +3,55 @@ import { useHelper } from '@react-three/drei';
 import { PointLightHelper } from 'three';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { lightsDebugState, sceneLightsState } from './store';
-import { guiDebugger } from 'utils/guiDebugger';
-import { DEBUG_LIGHTS_ITEM } from 'utils/constants';
+import { addDebugItemCheckbox, guiDebugger } from 'utils/guiDebugger';
 
 export const SceneLights = () => {
   const lights = useRecoilValue(sceneLightsState);
-  // const [lights, setLights] = useRecoilState(sceneLightsState);
+
   const [
-    enableLightHelpers,
+    {
+      enableLightHelpers,
+      enableLights,
+      debugItems,
+    },
     setEnableLightHelpers,
   ] = useRecoilState(lightsDebugState);
-
-  const debugObject = {
-    enableLightHelpers,
-    lights,
-  };
-
-  // const debugColorObject = {
-  //   colors: [
-  //     { color: 0xf100ff },
-  //     { color: 0xc56cef },
-  //     { color: 0x0000FF },
-  //     { color: 0x00ffdd },
-  //     { color: 0x16a7f5 },
-  //     { color: 0x0000FF },
-  //   ],
-  // };
 
   // Debug
   useEffect(() => {
     if (guiDebugger) {
-      const existingFolder = guiDebugger.folders.find((folder) => {
-        return folder._title === DEBUG_LIGHTS_ITEM.LIGHTS;
+      const debugObject = {
+        enableLightHelpers,
+        enableLights,
+        lights,
+      };
+
+      const debugChangeFunctions = [
+        (bool) => setEnableLightHelpers((state) => {
+          return {
+            ...state,
+            enableLightHelpers: bool,
+          };
+        }),
+        (bool) => setEnableLightHelpers((state) => {
+          return {
+            ...state,
+            enableLights: bool,
+          };
+        }),
+      ];
+
+      debugItems.map((debugItem, index) => {
+        addDebugItemCheckbox({
+          changeFunction: debugChangeFunctions[index],
+          controllerName: debugItem.controllerName,
+          debugObject,
+          debugObjectItemName: debugItem.debugObjectItemName,
+          folderTitle: debugItem.folderTitle,
+        });
       });
 
-      const lightsFolder = existingFolder ||
-        guiDebugger.addFolder(DEBUG_LIGHTS_ITEM.LIGHTS).open();
-
-      existingFolder?.controllers.find((controller) => {
-        return controller._name === DEBUG_LIGHTS_ITEM.HELPERS;
-      }) || lightsFolder.add(debugObject, 'enableLightHelpers')
-          .name(DEBUG_LIGHTS_ITEM.HELPERS)
-          .onChange((bool) => setEnableLightHelpers(bool),
-          );
-
+      // TODO Finish creating color changer debugger
     //   lights.map((light, index) => {
     //     const numberedLightFolder =
       //     `${DEBUG_LIGHTS_ITEM.LIGHT}: ${index + 1}`;
@@ -80,28 +85,28 @@ export const SceneLights = () => {
     //         });
     //   });
     }
-  }, []);
+  }, [enableLights]);
 
   return (
     <>
       <ambientLight
-        color={0x0000FF}
-        intensity={3}
+        color={0xFFFFFF}
+        intensity={0.3}
       />
       {
-        lights.map((light, index) => {
+        lights.map((light) => {
           const { color, intensity, distance, x, y, z } = light;
 
           const lightRef = useRef();
           useHelper(
-              debugObject.enableLightHelpers && lightRef,
+              enableLightHelpers && lightRef,
               PointLightHelper,
               1,
               color,
           );
 
           return (
-            <pointLight
+            enableLights && <pointLight
               key={`Light ${light.color}: ${light.x}, ${light.y}, ${light.z}`}
               ref={lightRef}
               color={color}

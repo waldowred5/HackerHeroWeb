@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import {
@@ -8,13 +7,14 @@ import {
   vertexPlacementChaosFactorState,
   vertexPointsState,
   serverOrbPropsState,
-  verticesState,
+  verticesState, serverOrbDebugState,
 } from './store';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { guiDebugger } from '../../utils/guiDebugger';
-import { DEBUG_GRAPH_ITEM } from '../../utils/constants';
+import { addDebugItemSlider, guiDebugger } from '../../utils/guiDebugger';
 import { hackerBotListState } from '../HackerBot/store';
 import { HackerBot } from '../HackerBot';
+import { Vertex } from '../Vertex';
+import { Edge } from '../Edge';
 
 const getFibonacciSpherePoints = ({
   nodes = 1,
@@ -45,20 +45,21 @@ const getFibonacciSpherePoints = ({
   { coords: [], vectors: [] });
 };
 
-// Component
-// TODO Split out children into separate components
 export const ServerOrb = () => {
   const pointsRef = useRef();
   const nodesGroup = useRef();
   const hackerBotsGroup = useRef();
 
-  const [{ radius }, setServerOrbProps] = useRecoilState(serverOrbPropsState);
+  const { radius } = useRecoilValue(serverOrbPropsState);
 
   const nodes = useRecoilValue(nodesState);
+  const serverOrbDebug = useRecoilValue(serverOrbDebugState);
+
   const [vertexNumber, setVertexNumber] = useRecoilState(vertexNumberState);
   const [vertexPoints, setVertexPoints] = useRecoilState(vertexPointsState);
   const [vertices, setVertices] = useRecoilState(verticesState);
   const [hackerBotList, setHackerBotList] = useRecoilState(hackerBotListState);
+
   const [
     lineDrawThresholdPercentage,
     setLineDrawThresholdPercentage,
@@ -68,6 +69,7 @@ export const ServerOrb = () => {
     setVertexPlacementChaosFactor,
   ] = useRecoilState(vertexPlacementChaosFactorState);
 
+  // Init vertices
   useEffect(() => {
     setVertexPoints(getFibonacciSpherePoints(
         {
@@ -86,73 +88,37 @@ export const ServerOrb = () => {
   }, [lineDrawThresholdPercentage, vertexNumber, vertexPlacementChaosFactor]);
 
   // Debug
-  const debugObject = {
-    lineDrawThresholdPercentage,
-    vertexNumber,
-    vertexPlacementChaosFactor,
-  };
-
-  // Debug
   useEffect(() => {
+    // Reset hackerBots on level reset
+    setHackerBotList([]);
+
     if (guiDebugger) {
-      setHackerBotList([]);
+      const debugObject = {
+        lineDrawThresholdPercentage,
+        vertexNumber,
+        vertexPlacementChaosFactor,
+      };
 
-      const existingFolder = guiDebugger.folders.find((folder) => {
-        return folder._title === DEBUG_GRAPH_ITEM.GRAPH;
+      const debugChangeFunctions = [
+        (value) => setVertexNumber(value),
+        (value) => setVertexPlacementChaosFactor(value),
+        (value) => setLineDrawThresholdPercentage(value),
+      ];
+
+      serverOrbDebug.map((debugItem, index) => {
+        addDebugItemSlider({
+          changeFunction: debugChangeFunctions[index],
+          controllerName: debugItem.controllerName,
+          debugObject,
+          debugObjectItemName: debugItem.debugObjectItemName,
+          folderTitle: debugItem.folderTitle,
+          min: debugItem.min,
+          max: debugItem.max,
+          step: debugItem.step,
+        });
       });
-
-      const graphFolder = existingFolder ||
-        guiDebugger.addFolder(DEBUG_GRAPH_ITEM.GRAPH).open();
-
-      existingFolder?.controllers.find((controller) => {
-        return controller._name === DEBUG_GRAPH_ITEM.VERTEX_NUMBER;
-      }) || graphFolder.add(debugObject, 'vertexNumber')
-          .name(DEBUG_GRAPH_ITEM.VERTEX_NUMBER)
-          .min(1)
-          .max(150)
-          .step(1)
-          .onChange((number) => setVertexNumber(number));
-
-      existingFolder?.controllers.find((controller) => {
-        return controller._name ===
-          DEBUG_GRAPH_ITEM.VERTEX_PLACEMENT_CHAOS_MODIFIER;
-      }) || graphFolder.add(debugObject, 'vertexPlacementChaosFactor')
-          .name(DEBUG_GRAPH_ITEM.VERTEX_PLACEMENT_CHAOS_MODIFIER)
-          .min(0.1)
-          .max(1500)
-          .step(0.1)
-          .onChange((number) => setVertexPlacementChaosFactor(number));
-
-      existingFolder?.controllers.find((controller) => {
-        return controller._name ===
-          DEBUG_GRAPH_ITEM.LINE_DRAW_THRESHOLD_PERCENTAGE;
-      }) || graphFolder.add(debugObject, 'lineDrawThresholdPercentage')
-          .name(DEBUG_GRAPH_ITEM.LINE_DRAW_THRESHOLD_PERCENTAGE)
-          .min(0.01)
-          .max(1)
-          .step(0.01)
-          .onChange((number) => setLineDrawThresholdPercentage(number));
     }
   }, [lineDrawThresholdPercentage, vertexNumber, vertexPlacementChaosFactor]);
-
-  const nodeClickHandler = (event, vector) => {
-    const { x, y, z } = vector;
-
-    setHackerBotList(() => {
-      return [
-        ...hackerBotList,
-        {
-          vector: { x, y, z },
-          nodeId: event.eventObject.uuid,
-        },
-      ];
-    });
-  };
-
-  const changeNodeColor = (event, color) => {
-    event.eventObject.material.color =
-      new THREE.Color(color);
-  };
 
   return (
     <>
@@ -174,26 +140,13 @@ export const ServerOrb = () => {
       >
         {
           vertexPoints.vectors.map((vector, i) => {
-            const { x, y, z } = vector;
-
-            const nodeMaterial = new THREE.MeshStandardMaterial({
-              color: 0x484848,
-              side: THREE.DoubleSide,
-            });
-
             return (
-              <mesh
-                key={`Node ${i}: ${vector.x}`}
-                position={[x, y, z]}
-                onClick={(event) => nodeClickHandler(event, vector)}
-                onPointerEnter={(event) => changeNodeColor(event, 'white')}
-                onPointerLeave={(event) => changeNodeColor(event, 0x484848)}
-              >
-                <sphereGeometry args={[0.09, 32, 32]} />
-                <primitive
-                  object={nodeMaterial}
-                />
-              </mesh>
+              <Vertex
+                key={`Vertex ${i}: ${vector.x}`}
+                hackerBotList={hackerBotList}
+                setHackerBotList={setHackerBotList}
+                vector={vector}
+              />
             );
           })
         }
@@ -227,44 +180,18 @@ export const ServerOrb = () => {
             ) {
               const endPoints = [];
               for (let i = 0; i < array.length - 1; i++) {
-                endPoints.push({ a: outerPointCoords, b: innerPointCoords });
+                endPoints.push({ outerPointCoords, innerPointCoords });
               }
 
-              for (const { a, b } of endPoints) {
-                const cylinderRadius = 0.02;
-                const cylinderTesselation = {
-                  radial: 16,
-                  length: 32,
-                };
+              const { x: x1, y: y1, z: z1 } = outerPointCoords;
+              const { x: x2, y: y2, z: z2 } = innerPointCoords;
 
-                const distance = a.distanceTo(b);
-                const cylinderGeom = new THREE.CylinderGeometry(
-                    cylinderRadius,
-                    cylinderRadius,
-                    distance,
-                    cylinderTesselation.radial,
-                    cylinderTesselation.length,
-                );
-
-                cylinderGeom.translate(0, distance / 2, 0);
-                cylinderGeom.rotateX(Math.PI / 2);
-
-                const cylinder = new THREE.Mesh(
-                    cylinderGeom,
-                    new THREE.MeshStandardMaterial({
-                      color: 0x0cff00,
-                    }),
-                );
-
-                cylinder.position.copy(innerPointCoords);
-                cylinder.lookAt(outerPointCoords);
-
-                const { x, y, z } = cylinder.position;
-
+              for (const { outerPointCoords, innerPointCoords } of endPoints) {
                 return (
-                  <primitive
-                    key={`Edge: ${x}, ${y}, ${z}`}
-                    object={cylinder}
+                  <Edge
+                    key={`Edge: [${x1}, ${y1}, ${z1}], [${x2}, ${y2}, ${z2}]`}
+                    outerCoords={outerPointCoords}
+                    innerCoords={innerPointCoords}
                   />
                 );
               }

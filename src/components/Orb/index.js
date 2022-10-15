@@ -1,55 +1,48 @@
 import React, { useEffect, useRef } from 'react';
-import { guiDebugger } from 'utils/guiDebugger';
-import { useRecoilState } from 'recoil';
-import { orbPropsState } from './store';
-import { DEBUG_ORB_ITEM } from 'utils/constants';
+import { addDebugItemSlider, guiDebugger } from 'utils/guiDebugger';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { orbDebugState, orbPropsState } from './store';
 
 export const Orb = () => {
   const orbRef = useRef();
+  const orbDebug = useRecoilValue(orbDebugState);
   const [{ scale, opacity }, setOrbState] = useRecoilState(orbPropsState);
-
-  const debugObject = {
-    opacity,
-    scale,
-  };
 
   // Debug
   useEffect(() => {
     if (guiDebugger) {
-      const existingFolder = guiDebugger.folders.find((folder) => {
-        return folder._title === DEBUG_ORB_ITEM.ORB;
+      const debugObject = {
+        opacity,
+        scale,
+      };
+
+      const debugChangeFunctions = [
+        (scaleFactor) => setOrbState((state) => {
+          return {
+            ...state,
+            scale: scaleFactor,
+          };
+        }),
+        (opacityFactor) => setOrbState((state) => {
+          return {
+            ...state,
+            opacity: opacityFactor,
+          };
+        }),
+      ];
+
+      orbDebug.map((debugItem, index) => {
+        addDebugItemSlider({
+          changeFunction: debugChangeFunctions[index],
+          controllerName: debugItem.controllerName,
+          debugObject,
+          debugObjectItemName: debugItem.debugObjectItemName,
+          folderTitle: debugItem.folderTitle,
+          min: debugItem.min,
+          max: debugItem.max,
+          step: debugItem.step,
+        });
       });
-
-      const orbFolder = existingFolder ||
-        guiDebugger.addFolder(DEBUG_ORB_ITEM.ORB).open();
-
-      existingFolder?.controllers.find((controller) => {
-        return controller._name === DEBUG_ORB_ITEM.SCALE;
-      }) || orbFolder.add(debugObject, 'scale')
-          .name(DEBUG_ORB_ITEM.SCALE)
-          .min(0)
-          .max(5)
-          .step(0.1)
-          .onChange((scaleFactor) => setOrbState((state) => {
-            return {
-              ...state,
-              scale: scaleFactor,
-            };
-          }));
-
-      existingFolder?.controllers.find((controller) => {
-        return controller._name === DEBUG_ORB_ITEM.OPACITY;
-      }) || orbFolder.add(debugObject, 'opacity')
-          .name(DEBUG_ORB_ITEM.OPACITY)
-          .min(0)
-          .max(1)
-          .step(0.01)
-          .onChange((opacityFactor) => setOrbState((state) => {
-            return {
-              ...state,
-              opacity: opacityFactor,
-            };
-          }));
     }
   }, []);
 
@@ -59,7 +52,7 @@ export const Orb = () => {
     >
       <sphereGeometry args={[scale, 32, 32]} />
       <meshStandardMaterial
-        color={0xFFFFFF}
+        color={'purple'}
         transparent={true}
         opacity={opacity}
       />
