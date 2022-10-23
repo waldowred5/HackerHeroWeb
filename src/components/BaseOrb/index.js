@@ -3,7 +3,7 @@ import { addDebugItemSlider, guiDebugger } from 'utils/guiDebugger';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { orbDebugState, orbPropsState } from './store';
 
-export const Orb = () => {
+export const BaseOrb = () => {
   const orbRef = useRef();
   const orbDebug = useRecoilValue(orbDebugState);
   const [{ scale, opacity }, setOrbState] = useRecoilState(orbPropsState);

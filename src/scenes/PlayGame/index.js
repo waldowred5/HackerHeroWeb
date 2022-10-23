@@ -1,6 +1,6 @@
 import React from 'react';
 import { ServerOrb } from 'components/ServerOrb';
-import { Orb } from 'components/Orb';
+import { BaseOrb } from 'components/BaseOrb';
 import { useFrame } from '@react-three/fiber';
 
 export const PlayGame = () => {
@@ -15,7 +15,7 @@ export const PlayGame = () => {
   return (
     <>
       <ServerOrb />
-      <Orb />
+      <BaseOrb />
     </>
   );
 };

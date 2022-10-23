@@ -9,6 +9,7 @@ import { GAME_SCREEN, DEBUG_GAME_MANAGER_ITEM } from 'utils/constants';
 import { guiDebugger } from 'utils/guiDebugger';
 import { ControlsTrackball } from '../ControlsTrackball';
 import { SceneLights } from '../SceneLights';
+import { Stats } from '@react-three/drei';
 
 export const GameManager = () => {
   const [gameScreen, setGameScreen] = useRecoilState(gameScreenState);
@@ -55,6 +56,7 @@ export const GameManager = () => {
 
   return (
     <>
+      <Stats showPanel={2} />
       <ControlsTrackball />
       <SceneLights />
       <Component />

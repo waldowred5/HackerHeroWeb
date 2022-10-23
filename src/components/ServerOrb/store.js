@@ -13,9 +13,8 @@ export const vertexNumberState = atom({
   default: 28,
 });
 
-// TODO Rename this...
-export const nodesState = selector({
-  key: 'nodes',
+export const verticesInitState = selector({
+  key: 'verticesInit',
   get: ({ get }) => {
     return Array.from(Array(get(vertexNumberState)));
   },
@@ -38,6 +37,11 @@ export const vertexPointsState = atom({
 
 export const verticesState = atom({
   key: 'vertices',
+  default: [],
+});
+
+export const nodesState = atom({
+  key: 'nodes',
   default: [],
 });
 

@@ -35,3 +35,9 @@ export const GAME_SCREEN = {
   MAIN_MENU: 'Main Menu',
   PLAY: 'Play',
 };
+
+export const NODE_OWNER = {
+  NEUTRAL: 'Neutral',
+  PLAYER_1: 'Player 1',
+  PLAYER_2: 'Player 2',
+};

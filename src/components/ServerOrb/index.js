@@ -2,12 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import {
   lineDrawThresholdPercentageState,
-  nodesState,
   vertexNumberState,
   vertexPlacementChaosFactorState,
   vertexPointsState,
   serverOrbPropsState,
-  verticesState, serverOrbDebugState,
+  verticesState,
+  serverOrbDebugState,
+  verticesInitState,
+  nodesState,
 } from './store';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { addDebugItemSlider, guiDebugger } from '../../utils/guiDebugger';
@@ -17,20 +19,20 @@ import { Vertex } from '../Vertex';
 import { Edge } from '../Edge';
 
 const getFibonacciSpherePoints = ({
-  nodes = 1,
+  vertices = 1,
   radius = 1,
   vertexPlacementChaosFactor,
   vertexNumber,
 }) => {
-  const offset = 2 / nodes.length;
+  const offset = 2 / vertices.length;
   const increment = Math.PI * (3 - Math.sqrt(5));
 
-  return nodes.reduce((acc, sample, index) => {
+  return vertices.reduce((acc, sample, index) => {
     const chaosLevel = 1 + Math.random() *
       vertexPlacementChaosFactor / vertexNumber / 1000;
     const yMod = ((index * offset) - 1) + (offset / 2);
     const distance = Math.sqrt(1 - Math.pow(yMod, 2));
-    const phi = ((index + 1) % nodes.length) * increment * chaosLevel;
+    const phi = ((index + 1) % vertices.length) * increment * chaosLevel;
     const zMod = Math.sin(phi) * distance;
     const xMod = Math.cos(phi) * distance;
     const x = xMod * radius;
@@ -52,12 +54,13 @@ export const ServerOrb = () => {
 
   const { radius } = useRecoilValue(serverOrbPropsState);
 
-  const nodes = useRecoilValue(nodesState);
+  const verticesInit = useRecoilValue(verticesInitState);
   const serverOrbDebug = useRecoilValue(serverOrbDebugState);
 
   const [vertexNumber, setVertexNumber] = useRecoilState(vertexNumberState);
   const [vertexPoints, setVertexPoints] = useRecoilState(vertexPointsState);
   const [vertices, setVertices] = useRecoilState(verticesState);
+  const [nodeList, setNodeList] = useRecoilState(nodesState);
   const [hackerBotList, setHackerBotList] = useRecoilState(hackerBotListState);
 
   const [
@@ -73,7 +76,7 @@ export const ServerOrb = () => {
   useEffect(() => {
     setVertexPoints(getFibonacciSpherePoints(
         {
-          nodes,
+          vertices: verticesInit,
           radius,
           vertexPlacementChaosFactor,
           vertexNumber,
@@ -144,7 +147,9 @@ export const ServerOrb = () => {
               <Vertex
                 key={`Vertex ${i}: ${vector.x}`}
                 hackerBotList={hackerBotList}
+                nodeList={nodeList}
                 setHackerBotList={setHackerBotList}
+                setNodeList={setNodeList}
                 vector={vector}
               />
             );
