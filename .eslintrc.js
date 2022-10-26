@@ -23,5 +23,6 @@ module.exports = {
     'object-curly-spacing': [2, 'always'],
     'require-jsdoc': 0,
     'react/no-unknown-property': ['off', { ignore: ['jsx'] }],
+    'max-len': ['error', { 'code': 90 }],
   },
 };

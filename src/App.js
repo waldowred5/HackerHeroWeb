@@ -3,11 +3,13 @@ import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { RecoilRoot } from 'recoil';
 import { GameManager } from './components/GameManager';
+import { UI } from './components/UI';
 
 const App = () => {
   return (
     <RecoilRoot>
       <div className="App">
+        <UI />
         <Canvas
           gl={{ toneMapping: 0 }}
         >

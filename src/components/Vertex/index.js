@@ -2,7 +2,9 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import PropTypes from 'prop-types';
-import { NODE_OWNER } from '../../utils/constants';
+import { NODE_OWNER } from 'utils/constants';
+import { guiDebugger } from '../../utils/guiDebugger';
+import { NodeDebugText } from '../NodeDebugText';
 
 export const Vertex = (
     {
@@ -10,7 +12,9 @@ export const Vertex = (
       setHackerBotList,
       nodeList,
       setNodeList,
+      setAdjacencyList,
       vector,
+      debugUuid = '',
     },
 ) => {
   const vertexRef = useRef();
@@ -81,27 +85,45 @@ export const Vertex = (
     });
   };
 
+  setAdjacencyList((state) => {
+
+  });
+
   return (
-    <mesh
-      ref={vertexRef}
-      position={[x, y, z]}
-      onClick={(event) => vertexClickHandler(event, vector)}
-      onPointerEnter={(event) => changeVertexColor(event, 'white')}
-      onPointerLeave={(event) => changeVertexColor(event, 'grey')}
-    >
-      <sphereGeometry args={[0.12, 32, 32]} />
-      <meshStandardMaterial
-        color={'grey'}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <>
+      {
+        <>
+          <mesh
+            ref={vertexRef}
+            position={[x, y, z]}
+            onClick={(event) => vertexClickHandler(event, vector)}
+            onPointerEnter={(event) => changeVertexColor(event, 'white')}
+            onPointerLeave={(event) => changeVertexColor(event, 'grey')}
+          >
+            <sphereGeometry args={[0.12, 32, 32]}/>
+            <meshStandardMaterial
+              color={'grey'}
+              side={THREE.DoubleSide}
+              transparent={true}
+              opacity={guiDebugger ? 0.3 : 1}
+            />
+          </mesh>
+          <NodeDebugText
+            vertexUuid={debugUuid}
+            vector={vector}
+          />
+        </>
+      }
+    </>
   );
 };
 
 Vertex.propTypes = {
   hackerBotList: PropTypes.array,
   nodeList: PropTypes.array,
+  setAdjacencyList: PropTypes.func,
   setHackerBotList: PropTypes.func,
   setNodeList: PropTypes.func,
   vector: PropTypes.object,
+  debugUuid: PropTypes.string,
 };

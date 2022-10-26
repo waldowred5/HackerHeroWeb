@@ -9,14 +9,15 @@ import {
   verticesState,
   serverOrbDebugState,
   verticesInitState,
-  nodesState,
+  nodesState, adjacencyListState,
 } from './store';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { addDebugItemSlider, guiDebugger } from '../../utils/guiDebugger';
 import { hackerBotListState } from '../HackerBot/store';
 import { HackerBot } from '../HackerBot';
 import { Vertex } from '../Vertex';
-import { Edge } from '../Edge';
+import { v4 as uuidv4 } from 'uuid';
+import { EdgeCollection } from '../EdgeCollection';
 
 const getFibonacciSpherePoints = ({
   vertices = 1,
@@ -47,6 +48,46 @@ const getFibonacciSpherePoints = ({
   { coords: [], vectors: [] });
 };
 
+const buildGraph = ({ radius, lineDrawThresholdPercentage, vertexPoints }) => {
+  const vertexUuids = vertexPoints.vectors.map(() => {
+    return uuidv4();
+  });
+
+  return vertexPoints.vectors.reduce(
+      (acc, fromVector, fromIndex, array) => {
+        const uuidFrom = vertexUuids[fromIndex];
+
+        const edges = array.map((toVector, toIndex) => {
+          const uuidTo = vertexUuids[toIndex];
+
+          if (toIndex === fromIndex) {
+            return;
+          }
+
+          if (
+            fromVector.distanceTo(toVector) > radius * lineDrawThresholdPercentage
+          ) {
+            return;
+          }
+
+          return {
+            distance: fromVector.distanceTo(toVector),
+            fromVector,
+            toVector,
+            uuid: uuidTo,
+            highlight: false,
+          };
+        }).filter((edge) => !!edge);
+
+        return {
+          ...acc,
+          [uuidFrom]: {
+            edges,
+          },
+        };
+      }, {});
+};
+
 export const ServerOrb = () => {
   const pointsRef = useRef();
   const nodesGroup = useRef();
@@ -56,6 +97,8 @@ export const ServerOrb = () => {
 
   const verticesInit = useRecoilValue(verticesInitState);
   const serverOrbDebug = useRecoilValue(serverOrbDebugState);
+
+  const [adjacencyList, setAdjacencyList] = useRecoilState(adjacencyListState);
 
   const [vertexNumber, setVertexNumber] = useRecoilState(vertexNumberState);
   const [vertexPoints, setVertexPoints] = useRecoilState(vertexPointsState);
@@ -74,21 +117,36 @@ export const ServerOrb = () => {
 
   // Init vertices
   useEffect(() => {
-    setVertexPoints(getFibonacciSpherePoints(
-        {
-          vertices: verticesInit,
-          radius,
-          vertexPlacementChaosFactor,
-          vertexNumber,
-        },
-    ));
+    setVertexPoints(() => {
+      return getFibonacciSpherePoints(
+          {
+            vertices: verticesInit,
+            radius,
+            vertexPlacementChaosFactor,
+            vertexNumber,
+          },
+      );
+    },
+    );
+
 
     setVertices(new Float32Array(
         vertexPoints.coords.reduce((acc, point) => {
           return [...acc, point];
         }, []),
     ));
-  }, [lineDrawThresholdPercentage, vertexNumber, vertexPlacementChaosFactor]);
+  }, [
+    lineDrawThresholdPercentage,
+    vertexNumber,
+    vertexPlacementChaosFactor,
+    radius,
+  ]);
+
+  useEffect(() => {
+    setAdjacencyList(buildGraph({ radius, lineDrawThresholdPercentage, vertexPoints }));
+
+    console.log(adjacencyList);
+  }, [radius, lineDrawThresholdPercentage, vertexPoints]);
 
   // Debug
   useEffect(() => {
@@ -150,6 +208,7 @@ export const ServerOrb = () => {
                 nodeList={nodeList}
                 setHackerBotList={setHackerBotList}
                 setNodeList={setNodeList}
+                debugUuid={Object.keys(adjacencyList)[i]}
                 vector={vector}
               />
             );
@@ -173,37 +232,60 @@ export const ServerOrb = () => {
         }
       </group>
       {
-        vertexPoints.vectors.map((outerPointCoords, i, array) => {
-          return vertexPoints.vectors.map((innerPointCoords, j) => {
-            if (j <= i) {
-              return;
-            }
-
-            if (
-              outerPointCoords.distanceTo(innerPointCoords) <
-              radius * lineDrawThresholdPercentage
-            ) {
-              const endPoints = [];
-              for (let i = 0; i < array.length - 1; i++) {
-                endPoints.push({ outerPointCoords, innerPointCoords });
-              }
-
-              const { x: x1, y: y1, z: z1 } = outerPointCoords;
-              const { x: x2, y: y2, z: z2 } = innerPointCoords;
-
-              for (const { outerPointCoords, innerPointCoords } of endPoints) {
-                return (
-                  <Edge
-                    key={`Edge: [${x1}, ${y1}, ${z1}], [${x2}, ${y2}, ${z2}]`}
-                    outerCoords={outerPointCoords}
-                    innerCoords={innerPointCoords}
-                  />
-                );
-              }
-            }
-          });
-        })
+        // vertexPoints.vectors.map((outerPointCoords, i, array) => {
+        //   return vertexPoints.vectors.map((innerPointCoords, j) => {
+        //     if (j <= i) {
+        //       return;
+        //     }
+        //
+        //     if (
+        //       outerPointCoords.distanceTo(innerPointCoords) <
+        //       radius * lineDrawThresholdPercentage
+        //     ) {
+        //       const endPoints = [];
+        //       for (let i = 0; i < array.length - 1; i++) {
+        //         endPoints.push({ outerPointCoords, innerPointCoords });
+        //       }
+        //
+        //       const { x: x1, y: y1, z: z1 } = outerPointCoords;
+        //       const { x: x2, y: y2, z: z2 } = innerPointCoords;
+        //
+        //       for (const { outerPointCoords, innerPointCoords } of endPoints) {
+        //         console.log('New Edge Added');
+        //         return (
+        //           <Edge
+        //             key={`Edge: [${x1}, ${y1}, ${z1}], [${x2}, ${y2}, ${z2}]`}
+        //             fromCoords={outerPointCoords}
+        //             toCoords={innerPointCoords}
+        //           />
+        //         );
+        //       }
+        //     }
+        //   });
+        // })
       }
+      <EdgeCollection
+        adjacencyList={adjacencyList}
+      />
+      {/* {*/}
+      {/*  Object.keys(adjacencyList).map((nodeUuid) => {*/}
+      {/*    return adjacencyList[nodeUuid].edges.map((edge) => {*/}
+      {/*      const { fromVector, toVector } = edge;*/}
+      {/*      const { x: x1, y: y1, z: z1 } = fromVector;*/}
+      {/*      const { x: x2, y: y2, z: z2 } = toVector;*/}
+
+      {/*      console.log('New Edge Added');*/}
+
+      {/*      return (*/}
+      {/*        <Edge*/}
+      {/*          key={`Edge: [${x1}, ${y1}, ${z1}], [${x2}, ${y2}, ${z2}]`}*/}
+      {/*          fromCoords={fromVector}*/}
+      {/*          toCoords={toVector}*/}
+      {/*        />*/}
+      {/*      );*/}
+      {/*    });*/}
+      {/*  })*/}
+      {/* }*/}
     </>
   );
 };

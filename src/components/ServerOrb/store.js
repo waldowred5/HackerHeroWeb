@@ -45,6 +45,11 @@ export const nodesState = atom({
   default: [],
 });
 
+export const adjacencyListState = atom({
+  key: 'adjacencyList',
+  default: {},
+});
+
 export const serverOrbDebugState = atom({
   key: 'serverOrbDebug',
   default: [
